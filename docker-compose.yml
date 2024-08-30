@@ -1,0 +1,137 @@
+version: '3.8'
+
+services:
+  gateway_app:
+    build:
+      context: ./src/gateway_app
+    ports:
+      - "8000:8000"
+    environment:
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=examplepassword
+      - POSTGRES_USER=exampleuser
+      - POSTGRES_PASSWORD=examplepassword
+      - POSTGRES_SERVER=postgres
+      - POSTGRES_PORT=5432
+      - POSTGRES_DB=stock_service
+      - RABBITMQ_HOST=rabbitmq
+      - RABBITMQ_PORT=5672
+      - RABBITMQ_USER=user
+      - RABBITMQ_PASSWORD=password
+      - RABBITMQ_QUEUE=your_queue_name
+      - PARENT_DIR=..
+    depends_on:
+      - postgres
+      - redis
+      - rabbitmq
+    volumes:
+      - ./src/database_schema:/app/database_schema
+    networks:
+      - app_network
+
+  celery_worker:
+    build:
+      context: ./src/task_service
+    environment:
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=examplepassword
+      - POSTGRES_USER=exampleuser
+      - POSTGRES_PASSWORD=examplepassword
+      - POSTGRES_SERVER=postgres
+      - POSTGRES_PORT=5432
+      - POSTGRES_DB=stock_service
+      - RABBITMQ_HOST=rabbitmq
+      - RABBITMQ_PORT=5672
+      - RABBITMQ_USER=user
+      - RABBITMQ_PASSWORD=password
+      - RABBITMQ_QUEUE=your_queue_name
+      - PARENT_DIR=..
+    depends_on:
+      - redis
+      - rabbitmq
+      - postgres
+    volumes:
+      - ./src/database_schema:/app/database_schema
+    networks:
+      - app_network
+
+  celery_beat:
+    build:
+      context: ./src/task_service
+    command: celery -A tasks beat --loglevel=info
+    environment:
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=examplepassword
+      - POSTGRES_USER=exampleuser
+      - POSTGRES_PASSWORD=examplepassword
+      - POSTGRES_SERVER=postgres
+      - POSTGRES_PORT=5432
+      - POSTGRES_DB=stock_service
+      - RABBITMQ_HOST=rabbitmq
+      - RABBITMQ_PORT=5672
+      - RABBITMQ_USER=user
+      - RABBITMQ_PASSWORD=password
+      - RABBITMQ_QUEUE=your_queue_name
+      - PARENT_DIR=..
+    depends_on:
+      - redis
+      - rabbitmq
+      - postgres
+    volumes:
+      - ./src/database_schema:/app/database_schema
+    networks:
+      - app_network
+
+  redis:
+    image: redis:latest
+    ports:
+      - "6380:6379"
+    environment:
+      - REDIS_PASSWORD=examplepassword
+    volumes:
+      - ./src/redis_data:/data
+    networks:
+      - app_network
+
+  rabbitmq:
+    image: rabbitmq:management
+    ports:
+      - "5673:5672"
+      - "15673:15672"
+    environment:
+      - RABBITMQ_DEFAULT_USER=user
+      - RABBITMQ_DEFAULT_PASS=password
+    volumes:
+      - ./src/rabbitmq_data:/var/lib/rabbitmq
+    networks:
+      - app_network
+
+  postgres:
+    image: postgres:latest
+    ports:
+      - "5433:5432"
+    environment:
+      - POSTGRES_USER=exampleuser
+      - POSTGRES_PASSWORD=examplepassword
+      - POSTGRES_DB=stock_service
+    volumes:
+      - ./db_data:/var/lib/postgresql/data
+      - ./create-db.sql:/docker-entrypoint-initdb.d/create_database.sql
+    networks:
+      - app_network
+
+  web_app:
+    build:
+      context: ./src/web_app
+    ports:
+      - "8080:80"
+    depends_on:
+      - gateway_app
+    networks:
+      - app_network
+
+networks:
+  app_network:

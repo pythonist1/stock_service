@@ -1,0 +1,52 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+env/
+venv/
+*.egg-info/
+*.eggs/
+*.pytest_cache/
+*.mypy_cache/
+*.tox/
+*.nox/
+*.coverage
+*.coverage.*
+*.cache
+*.log
+
+# Docker
+# Исключить локальные файлы конфигурации Docker, которые могут отличаться
+docker-compose.override.yml
+# Docker
+
+**/db_data/
+**/redis_data/
+**/rabbitmq_data/
+
+# Environment variables
+.env
+
+# Database files
+*.sqlite
+
+# PyCharm
+.idea/
+
+# VS Code
+.vscode/
+
+# Jupyter Notebook
+.ipynb_checkpoints/
+
+# MacOS
+.DS_Store
+
+# Windows
+Thumbs.db
+Desktop.ini
+
+celerybeat-schedule.db
+pyproject.toml
+poetry.lock

@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vue.js WebSocket Example</title>
+  <script src="https://cdn.jsdelivr.net/npm/vue@2"></script>
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.2.1/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@2.1.0/dist/chartjs-adapter-date-fns.umd.min.js"></script>
+
+
+  <script src="app.js" defer></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f4f4f4;
+      margin: 0;
+      padding: 0;
+    }
+    #app {
+      max-width: 1200px;
+      margin: auto;
+      padding: 20px;
+    }
+    #controls {
+      margin-bottom: 20px;
+    }
+    #controls input,
+    #controls button {
+      margin-right: 10px;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+    #controls button {
+      cursor: pointer;
+      background-color: #007bff;
+      color: #fff;
+      border: none;
+    }
+    #controls button:hover {
+      background-color: #0056b3;
+    }
+    #webSocketStatus {
+      margin-bottom: 20px;
+      padding: 10px;
+      border-radius: 4px;
+      color: #fff;
+      background-color: #b0d1f4; /* Light Blue for Connected */
+    }
+    #webSocketStatus.disconnected {
+      background-color: #f8d7da; /* Light Red for Disconnected */
+    }
+    #webSocketStatus.connecting {
+      background-color: #fff3cd; /* Light Yellow for Connecting */
+    }
+    #dataTables {
+      display: flex;
+      justify-content: space-between;
+      gap: 20px;
+      margin-bottom: 20px;
+    }
+    .data-table-container {
+      background-color: #ffffff;
+      border-radius: 8px;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+      padding: 20px;
+      flex: 1;
+      min-width: 0;
+      overflow-x: auto;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+    }
+    th, td {
+      padding: 8px;
+      text-align: left;
+      border-bottom: 1px solid #ddd;
+      white-space: nowrap;
+    }
+    th {
+      background-color: #f0f0f0;
+    }
+    #stockDataContainer {
+      background-color: #ffffff;
+      border-radius: 8px;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+      padding: 20px;
+      width: 100%;
+    }
+    .stock-data-example {
+      border: 1px solid #ddd;
+      padding: 10px;
+      margin-bottom: 10px;
+      background-color: #fafafa;
+      border-radius: 4px;
+    }
+    .chart-placeholder {
+      width: 100%;
+      height: 400px;
+      background-color: #444
+      border: 2px solid #555;
+      border-radius: 8px;
+      margin-top: 20px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3); /* Легкая тень */
+    }
+
+    .aggregation-options {
+      margin-top: 20px;
+      display: flex;
+      align-items: center;
+      gap: 10px; /* Расстояние между элементами */
+    }
+
+    .aggregation-options select,
+    .aggregation-options button {
+      padding: 12px 16px;
+      border: 2px solid #555; /* Светлее бордер */
+      border-radius: 6px;
+      background-color: #444; /* Светлее фон для элементов */
+      color: #fff; /* Белый текст */
+      font-weight: bold; /* Жирный текст для кнопок */
+    }
+
+    .aggregation-options select {
+      cursor: pointer;
+    }
+
+    .aggregation-options button {
+      cursor: pointer;
+      background-color: #ff5733; /* Яркая кнопка для акцента */
+    }
+
+    .aggregation-options button:hover {
+      background-color: #c70039; /* Темнее при наведении */
+    }
+    .request-status {
+      display: inline-block;
+      margin-left: 10px;
+      padding: 10px;
+      border-radius: 4px;
+      background-color: #d4edda; /* Light Green for Success */
+      color: #155724;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <div id="controls">
+      <input v-model="message" placeholder="Type a message" />
+      <button @click="sendMessage">Send Message</button>
+      <button @click="connectWebSocket">Connect WebSocket</button>
+    </div>
+
+    <div id="webSocketStatus" :class="status.toLowerCase()">
+      WebSocket Status: {{ status }}
+    </div>
+
+    <div id="unknownMessages">
+      <h3>Unknown Messages:</h3>
+      <div v-for="(msg, index) in unknownMessages" :key="index" class="unknown-message">
+        {{ msg }}
+      </div>
+    </div>
+
+    <div id="dataTables">
+      <div class="data-table-container">
+        <h3>Stock Data:</h3>
+        <table border="1">
+          <thead>
+            <tr>
+              <th>Ticker</th>
+              <th>Volume</th>
+              <th>Average Price</th>
+              <th>Open Price</th>
+              <th>Close Price</th>
+              <th>High Price</th>
+              <th>Low Price</th>
+              <th>Timestamp</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="(msg, index) in messages" :key="index">
+              <td>{{ msg.ticker }}</td>
+              <td>{{ msg.volume }}</td>
+              <td>{{ msg.avgPrice }}</td>
+              <td>{{ msg.openPrice }}</td>
+              <td>{{ msg.closePrice }}</td>
+              <td>{{ msg.highPrice }}</td>
+              <td>{{ msg.lowPrice }}</td>
+              <td>{{ msg.timestamp }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="data-table-container">
+        <h3>Demonstration Data:</h3>
+        <table border="1">
+          <thead>
+            <tr>
+              <th>Ticker</th>
+              <th>Volume</th>
+              <th>Average Price</th>
+              <th>Open Price</th>
+              <th>Close Price</th>
+              <th>High Price</th>
+              <th>Low Price</th>
+              <th>Timestamp</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="(msg, index) in demonstrationMessages" :key="index">
+              <td>{{ msg.ticker }}</td>
+              <td>{{ msg.volume }}</td>
+              <td>{{ msg.avgPrice }}</td>
+              <td>{{ msg.openPrice }}</td>
+              <td>{{ msg.closePrice }}</td>
+              <td>{{ msg.highPrice }}</td>
+              <td>{{ msg.lowPrice }}</td>
+              <td>{{ msg.timestamp }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div id="stockDataContainer">
+      <h3>Stock Data Aggregation Example:</h3>
+      <div v-if="stockDataExample" class="stock-data-example">
+        <p><strong>Stock ID:</strong> {{ stockDataExample.stock_id }}</p>
+        <p><strong>Name:</strong> {{ stockDataExample.name }}</p>
+        <p><strong>Company Name:</strong> {{ stockDataExample.company_name }}</p>
+      </div>
+      <div class="chart-placeholder">
+        <canvas id="stockChart"></canvas>
+      </div>
+
+      <div v-if="stockDataExample" class="aggregation-options">
+        <h3>Aggregation Options:</h3>
+        <select v-model="selectedInterval">
+          <option value="">Select Interval</option>
+          <option value="1h">1 Hour</option>
+          <option value="4h">4 Hours</option>
+          <option value="1d">1 Day</option>
+          <option value="3d">3 Days</option>
+          <option value="10d">10 Days</option>
+        </select>
+        <button @click="requestAggregation">Request Aggregation</button>
+        <div v-if="requestStatus" class="request-status">
+          {{ requestStatus }}
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
