@@ -2,6 +2,7 @@ from celery.schedules import crontab
 from celery import chain
 
 from app.bootstrap import bootstrap_celery_app, bootstrap_db_session, bootstrap_handler
+from app.adapters import LockNotAcquiredError
 
 
 app = bootstrap_celery_app()
@@ -33,7 +34,10 @@ app.conf.timezone = 'UTC'
 def aggregate_data(stock_id, interval, user_id):
     db_session = next(get_db_session())
     handler = get_handler(db_session)
-    handler.aggregate_data(stock_id, interval, user_id)
+    try:
+        handler.aggregate_data(stock_id, interval, user_id)
+    except LockNotAcquiredError:
+        aggregate_data.apply_async(stock_id, interval, user_id)
 
 
 @app.task()

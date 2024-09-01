@@ -5,7 +5,7 @@ from datetime import datetime, timedelta
 from amqp import Channel
 from kombu import Connection, Exchange, Queue, Producer
 
-from .request_aggregator import RequestAggregator
+from .adapters import RequestAggregator, RedlockHandler
 from .storage.repository import StocksRepository
 
 from enum import Enum
@@ -19,10 +19,17 @@ class AggregationInterval(Enum):
 
 
 class TaskHandler:
-    def __init__(self, db_session, redis_client, config, db_tables, rabbit_channel: Producer):
+    def __init__(self,
+                 db_session,
+                 redis_client,
+                 config,
+                 db_tables,
+                 rabbit_channel: Producer,
+                 redlock_handler: RedlockHandler):
         self._config = config
         self._redis_client = redis_client
         self._rabbit_channel = rabbit_channel
+        self._redlock_handler = redlock_handler
         self._repository = StocksRepository(db_session, db_tables)
         self._request_aggregator = RequestAggregator(self._config.API_KEY)
 
@@ -73,14 +80,19 @@ class TaskHandler:
 
         self._redis_client.set('actual_data', json.dumps(actual_data))
 
-
     def aggregate_data(self, stock_id, interval, user_id):
-        result = self._repository.get_aggregation(stock_id, interval)
-        message = {
-            "user_id": user_id,
-            "aggregation_result": result
-        }
-        self._publish_message(message)
+        lock = self._redlock_handler.acquire_lock(stock_id)
+        if lock:
+            try:
+                result = self._repository.get_aggregation(stock_id, interval)
+                message = {
+                    "user_id": user_id,
+                    "aggregation_result": result
+                }
+                self._publish_message(message)
+            finally:
+                self._redlock_handler.unlock(lock)
+                print("Lock released!")
 
     def _publish_message(self, message):
         self._rabbit_channel.basic_publish(

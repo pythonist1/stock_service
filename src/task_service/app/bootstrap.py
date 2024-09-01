@@ -9,7 +9,7 @@ import redis
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, scoped_session
 
-from .request_aggregator.request_aggregator import RequestAggregator
+from .adapters import RequestAggregator, RedlockHandler
 from .handler import TaskHandler
 
 project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), config.parent_dir))
@@ -53,7 +53,8 @@ def bootstrap_handler(db_session):
         decode_responses=True
     )
     rabbit_channel = bootstrap_rabbit_connection()
-    handler = TaskHandler(db_session, redis_client, config, db_tables, rabbit_channel)
+    redlock_handler = RedlockHandler([{'host': config.redis_host, 'port': config.redis_port}])
+    handler = TaskHandler(db_session, redis_client, config, db_tables, rabbit_channel, redlock_handler)
     return handler
 
 
