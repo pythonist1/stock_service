@@ -20,7 +20,3 @@ class CeleryWorkerManager(AbstractWorkerManager):
         self._celery_app.send_task(
             'tasks.collect_stocks'
         )
-        self._celery_app.send_task(
-            'tasks.collect_stock_data_example',
-            kwargs={"data": {}}
-        )

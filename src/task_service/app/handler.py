@@ -36,12 +36,11 @@ class TaskHandler:
             self._repository.save_stock(data['results'])
 
     def collect_stock_data_example(self):
-        stock = self._repository.get_stock_by_name("A")
+        stock = self._repository.get_stock_by_name("AAPL")
 
         start_date = int((datetime.now() - timedelta(days=10)).timestamp() * 1000)
         end_date = int(datetime.now().timestamp() * 1000)
 
-        # try:
         data = self._request_aggregator.get_aggregates(
             ticker=stock.name,
             multiplier=15,
@@ -52,8 +51,10 @@ class TaskHandler:
 
         if data.get('results'):
             self._repository.save_stock_data(stock.id, data.get('results'))
-        # except Exception as e:
-        #     print(e)
+
+        stock_data_example = self._repository.get_stock_data_example("AAPL")
+        self._redis_client.set('stock_data_example', json.dumps(stock_data_example))
+
 
     def collect_actual_data(self):
         actual_data = []
@@ -68,14 +69,9 @@ class TaskHandler:
                 adjusted=True,
                 sort="desc"
             )
-            print(data)
             actual_data.append(data)
 
         self._redis_client.set('actual_data', json.dumps(actual_data))
-
-        stock_data_example = self._repository.get_stock_data_example()
-        print(stock_data_example)
-        self._redis_client.set('stock_data_example', json.dumps(stock_data_example))
 
 
     def aggregate_data(self, stock_id, interval, user_id):

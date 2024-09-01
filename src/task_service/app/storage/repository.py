@@ -17,10 +17,9 @@ class StocksRepository:
         stock_company = self._db_session.query(self._db_tables.StockCompanyInfo).filter_by(stock_id=stock_id).first()
         return stock_company
 
-    def get_stock_data_example(self):
-        result = (self._db_session.query(self._db_tables.PriceAndTrade)).first()
-        stock = (self._db_session.query(self._db_tables.Stock).filter_by(id=result.stock_id)).first()
-        stock_company = self.get_stock_company_by_id(result.stock_id)
+    def get_stock_data_example(self, name):
+        stock = (self._db_session.query(self._db_tables.Stock).filter_by(name=name)).first()
+        stock_company = self.get_stock_company_by_id(stock.id)
         return {
             "stock_id": stock.id,
             "name": stock.name,
