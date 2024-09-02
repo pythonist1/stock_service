@@ -1,2 +1,3 @@
-from .request_aggregator import RequestAggregator
 from .redlock_handler import RedlockHandler, LockNotAcquiredError
+from .rabbitmq_handler import RabbitMqHandler
+from .poligon_io_request_client import PoligonIoRequestClient

@@ -51,5 +51,5 @@ def collect_actual_data():
 def collect_stocks():
     db_session = next(get_db_session())
     handler = get_handler(db_session)
-    handler.collect_stock()
+    handler.collect_stocks_information()
     handler.collect_stock_data_example()

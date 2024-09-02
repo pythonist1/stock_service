@@ -13,6 +13,11 @@ class StocksRepository:
         stock = self._db_session.query(self._db_tables.Stock).filter_by(name=name).first()
         return stock
 
+    def get_stock_name_by_id(self, stock_id):
+        stock = self._db_session.query(self._db_tables.Stock).filter_by(id=stock_id).first()
+        return stock.name
+
+
     def get_stock_company_by_id(self, stock_id):
         stock_company = self._db_session.query(self._db_tables.StockCompanyInfo).filter_by(stock_id=stock_id).first()
         return stock_company
@@ -26,7 +31,7 @@ class StocksRepository:
             "company_name": stock_company.company_name
         }
 
-    def save_stock(self, data):
+    def save_stocks_information(self, data):
         for ticker_info in data:
             ticker = ticker_info['ticker']
             company_name = ticker_info.get('name', 'N/A')

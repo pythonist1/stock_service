@@ -9,7 +9,7 @@ import redis
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, scoped_session
 
-from .adapters import RequestAggregator, RedlockHandler
+from .adapters import RedlockHandler, RabbitMqHandler
 from .handler import TaskHandler
 
 project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), config.parent_dir))
@@ -52,13 +52,13 @@ def bootstrap_handler(db_session):
         port=config.redis_port,
         decode_responses=True
     )
-    rabbit_channel = bootstrap_rabbit_connection()
+    queue_handler = bootstrap_queue_handler()
     redlock_handler = RedlockHandler([{'host': config.redis_host, 'port': config.redis_port}])
-    handler = TaskHandler(db_session, redis_client, config, db_tables, rabbit_channel, redlock_handler)
+    handler = TaskHandler(db_session, redis_client, config, db_tables, queue_handler, redlock_handler)
     return handler
 
 
-def bootstrap_rabbit_connection():
+def bootstrap_queue_handler():
     rabbit_url = f"amqp://{config.rabbitmq_user}:{config.rabbitmq_password}@{config.rabbitmq_host}:{config.rabbitmq_port}/"
 
     params = pika.URLParameters(rabbit_url)
@@ -68,4 +68,5 @@ def bootstrap_rabbit_connection():
     queue_name = 'test_queue'
     channel.queue_declare(queue=queue_name, durable=False, auto_delete=True)  # Убедитесь, что параметры совпадают
 
-    return channel
+    queue_handler = RabbitMqHandler(channel, config)
+    return queue_handler
