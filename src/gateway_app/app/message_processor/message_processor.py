@@ -17,3 +17,6 @@ class MessageProcessor:
         if start_callback_name:
             start_callback = getattr(self._use_cases, start_callback_name)
             service.set_start_callback(start_callback)
+
+    async def stop(self):
+        await self._use_cases.stop_adapters()

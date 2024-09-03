@@ -17,7 +17,6 @@ class MessageUseCases:
     async def send_message_to_client(self, message: aio_pika.abc.AbstractIncomingMessage):
         async with message.process():
             message_data = json.loads(message.body)
-            print(message_data)
             if message_data.get("user_id"):
                 if message_data.get("aggregation_result"):
                     await self._websocket_manager.send_message_to_user(message_data, message_data["user_id"])
@@ -35,3 +34,6 @@ class MessageUseCases:
 
     def collect_stocks(self):
         self._worker_manager.collect_stocks()
+
+    async def stop_adapters(self):
+        await self._actual_data_manager.stop()

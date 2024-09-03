@@ -37,6 +37,10 @@ class AbstractActualDataManager(ABC):
     async def get_actual_data(self):
         pass
 
+    @abstractmethod
+    async def stop(self):
+        pass
+
 
 class AbstractUserRepository(ABC):
     @abstractmethod

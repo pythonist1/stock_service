@@ -53,3 +53,5 @@ class ActualDataManager(AbstractActualDataManager):
     def get_demonstration_data(self):
         return generate_random_stock_data()
 
+    async def stop(self):
+        await self._redis_client.close()

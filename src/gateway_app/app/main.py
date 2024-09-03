@@ -1,6 +1,7 @@
 import bootstrap as bts
 from entrypoint import Entrypoint
 
+
 def run():
     engine = bts.bootstrap_database_engine()
     auth_handler = bts.bootstrap_auth_handler(engine)
@@ -26,7 +27,14 @@ def run():
     app.state.websocket_manager = websocket_manager
     app.state.auth_handler = auth_handler
 
-    entrypoint = Entrypoint([gateway_service, message_consumer_service, data_sync_service])
+    entrypoint = Entrypoint(
+        [
+            gateway_service,
+            message_consumer_service,
+            data_sync_service
+        ],
+        message_processor
+    )
 
 
     with entrypoint as loop:

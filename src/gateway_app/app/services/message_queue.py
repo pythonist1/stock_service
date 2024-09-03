@@ -1,3 +1,4 @@
+import asyncio
 import aio_pika
 
 from abstractions import AbstractService
@@ -13,11 +14,10 @@ class MessageConsumerService(AbstractService):
         self._connection = await aio_pika.connect_robust(
             self._url
         )
-        self._channel = await self._connection.channel()
-        self._queue = await self._channel.declare_queue(self._queue_name, auto_delete=True)
-        await self._channel.set_qos(prefetch_count=100)
-        loop.create_task(self._queue.consume(self._process_callback))
-        await loop.create_future()
+        channel = await self._connection.channel()
+        queue = await channel.declare_queue(self._queue_name, auto_delete=True)
+        await channel.set_qos(prefetch_count=100)
+        await queue.consume(self._process_callback)
 
     async def stop(self):
         await self._connection.close()

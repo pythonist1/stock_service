@@ -41,8 +41,7 @@ def bootstrap_database_engine():
     db_name = config.postgres_db
 
     postgres_url = f"postgresql+asyncpg://{username}:{password}@{host}:{port}/{db_name}"
-    print(postgres_url, '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
-    time.sleep(10)
+
     async_engine = create_async_engine(postgres_url)
 
     from sqlalchemy import create_engine
@@ -100,12 +99,12 @@ def bootstrap_celery_worker_manager():
 
 
 def bootstrap_actual_data_manager():
-    redis_cleint = aioredis.from_url(
+    redis_client = aioredis.from_url(
         url=f'redis://{config.redis_host}:{config.redis_port}',
         max_connections=1
     )
 
-    actual_data_manager = ActualDataManager(redis_cleint)
+    actual_data_manager = ActualDataManager(redis_client)
     return actual_data_manager
 
 
